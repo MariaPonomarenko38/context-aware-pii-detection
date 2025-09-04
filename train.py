@@ -6,7 +6,6 @@ import pandas as pd
 import pickle
 import json
 from data import prepare_dataset
-from datasets import concatenate_datasets
 from peft import (
     LoraConfig,
     prepare_model_for_kbit_training,
@@ -22,9 +21,15 @@ from trl import SFTTrainer, SFTConfig
 from constants import TRAINING_CONFIG_PATH
 import gc
 import torch
+import wandb
 
 torch.cuda.empty_cache()
 gc.collect()
+
+os.environ["WANDB_MODE"] = "online"
+os.environ["WANDB_PROJECT"] = "context-aware-pii-detection"
+
+wandb.login(key=os.getenv("WANDB_API_KEY"))
 
 def main(args):
 
@@ -77,7 +82,7 @@ def main(args):
         gradient_accumulation_steps=2,
         gradient_checkpointing=True,
         optim="paged_adamw_32bit",
-        logging_steps=100,
+        logging_steps=1,
         learning_rate=2e-4,
         bf16=True,
         tf32=True,
@@ -85,13 +90,11 @@ def main(args):
         warmup_ratio=0.03,
         dataset_text_field="instructions",
         lr_scheduler_type="cosine",
-        #report_to="wandb",
-        #run_name="exp-1",
+        report_to="wandb",
+        run_name="exp-1",
         max_length=max_seq_length,
         neftune_noise_alpha=args['neftune']
     )
-
-    
 
     trainer = SFTTrainer(
         model=model,
