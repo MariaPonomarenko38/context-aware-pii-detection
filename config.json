@@ -1,9 +1,9 @@
 {
     "dataset_repo": "ponoma16/context-aware-pii-detection",
     "results_dir": "./models/v2",
-    "pretrained_ckpt": "lmsys/vicuna-7b-v1.5",
+    "pretrained_ckpt": "mistralai/Mistral-7B-Instruct-v0.3",
     "lora_r": 64,
-    "epochs": 3,
+    "epochs": 2,
     "dropout": 0.1,
     "train_sample_fraction": 0.99,
     "neftune": null,

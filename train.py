@@ -11,6 +11,7 @@ from peft import (
     prepare_model_for_kbit_training,
     get_peft_model,
 )
+from datacollactor import OnlyAnswerLossCollator
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -31,9 +32,32 @@ os.environ["WANDB_PROJECT"] = "context-aware-pii-detection"
 
 wandb.login(key=os.getenv("WANDB_API_KEY"))
 
+def format_instruction(sample):
+    """
+    Formats a single example for instruction fine-tuning.
+    The model will learn to generate everything after the 'ASSISTANT: ' prefix.
+    """
+    # Create the instruction part (the input/context for the model)
+    instruction = f"""USER: Estimate the importance of the PII '{sample['pii']}' for answering question, 
+based on the question and the context where the PII appears.
+Context: {sample['context']}
+Question: {sample['question']} 
+
+If it is highly important for the question output - high.
+If it is not important for the question output - low.
+Output just one word - either high or low.
+
+ASSISTANT: """ # Critical: Note the space after "ASSISTANT: "
+
+    # The full text is the instruction PLUS the desired response.
+    # The model's task is to complete the instruction with the response.
+    full_text = instruction + sample['importance']
+    return full_text
+
 def main(args):
 
     train_dataset = prepare_dataset(args['dataset_repo'], "context", "question", "importance")
+    train_dataset = train_dataset.shuffle(seed=42)
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_use_double_quant=True,
@@ -49,7 +73,7 @@ def main(args):
     )
     model.config.pretraining_tp = 1
 
-    tokenizer = AutoTokenizer.from_pretrained(args['pretrained_ckpt'])
+    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
@@ -70,7 +94,12 @@ def main(args):
         task_type="CAUSAL_LM",
         target_modules=full_modules 
     )
-
+    response_template = "ASSISTANT: "
+    data_collator = OnlyAnswerLossCollator(
+        tokenizer=tokenizer,
+        response_template=response_template,
+        max_length=max_seq_length,
+    )
     model = prepare_model_for_kbit_training(model)
     model = get_peft_model(model, peft_config)
     max_seq_length = 2048 
@@ -99,9 +128,8 @@ def main(args):
     trainer = SFTTrainer(
         model=model,
         train_dataset=train_dataset,
-        
         processing_class=tokenizer,
-        
+        data_collator=data_collator,
         args=training_args,
         
     )

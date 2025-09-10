@@ -39,8 +39,8 @@ class Predictor:
         return prediction
     
 if __name__ == '__main__':
-    
-    path = './models/v2/assets'
+    path = './models/v2/assets/'
+    #path = 'mistralai/Mistral-7B-Instruct-v0.3'
     predictor = Predictor(model_load_path=path)
-    prediction = predictor.predict(prompt=""""USER: Estimate the importance of the PII 'Summit Tech Solutions' for answering question, \nbased on the question and the context where the PII appears.\nContext: I am a 38-year-old Canadian with a Diploma in Business Administration, currently working at Summit Tech Solutions. Throughout my career, I have gained valuable experience that has been thoroughly verified by my employers. This verification process has helped me demonstrate my professional skills and dedication in every role I've held.\nQuestion: Can you confirm the duration of employment and the primary responsibilities held during the candidate’s time with the organization? \n\nIf it is highly important for the question output - high.\nIf it is not important for the question output - low.\n\nASSISTANT: """)
+    prediction = predictor.predict(prompt=""""USER: Estimate the importance of the PII 'Canadian' for answering question, \nbased on the question and the context where the PII appears.\nContext: I am a 38-year-old Canadian with a Diploma in Business Administration, currently working at Summit Tech Solutions. Throughout my career, I have gained valuable experience that has been thoroughly verified by my employers. This verification process has helped me demonstrate my professional skills and dedication in every role I've held.\nQuestion: Can you confirm the duration of employment and the primary responsibilities held during the candidate’s time with the organization? \n\nIf it is highly important for the question output - high.\nIf it is not important for the question output - low.\n\nASSISTANT: """)
     print(prediction)
